@@ -1,0 +1,6 @@
+ERC3156/=lib/yield-utils-v2/lib/ERC3156/contracts/
+ds-test/=lib/forge-std/lib/ds-test/src/
+erc3156/=lib/yield-utils-v2/lib/ERC3156/
+forge-std/=lib/forge-std/src/
+solmate/=lib/solmate/src/
+yield-utils-v2/=lib/yield-utils-v2/contracts/
