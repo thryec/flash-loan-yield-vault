@@ -10,51 +10,23 @@ import "./IERC3156FlashLender.sol";
 
 contract FlashLoanVault is ERC20Permit, IERC3156FlashLender {
     // ------------- ERC-3156 Implementations ------------- //
+    bytes32 public constant CALLBACK_SUCCESS =
+        keccak256("ERC3156FlashBorrower.onFlashLoan");
     address internal flashLoanBorrower;
 
     using FixedPointMathLib for uint256;
 
     mapping(address => uint256) maxLoans;
-    uint256 constant fee = 1 / 1000;
+    uint256 public constant fee = 10; // divide by 10000 to get 0.1%
 
     constructor(
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
-        address underlyingAddress,
-        IERC3156FlashBorrower borrower
+        address underlyingAddress_
     ) ERC20Permit(name_, symbol_, decimals_) {
-        _underlyingAddress = underlyingAddress;
-        underlying = IERC20(underlyingAddress);
-        flashLoanBorrower = address(borrower);
-    }
-
-    /**
-     * @dev The amount of currency available to be lent.
-     * @param token The loan currency.
-     * @return The amount of `token` that can be borrowed.
-     */
-    function maxFlashLoan(address token)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        maxLoans[token];
-    }
-
-    /**
-     * @dev The fee to be charged for a given loan.
-     * @param token The loan currency.
-     * @param amount The amount of tokens lent.
-     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
-     */
-    function flashFee(address token, uint256 amount)
-        external
-        view
-        returns (uint256)
-    {
-        return fee;
+        underlyingAddress = underlyingAddress_;
+        underlying = IERC20(underlyingAddress_);
     }
 
     /**
@@ -69,8 +41,62 @@ contract FlashLoanVault is ERC20Permit, IERC3156FlashLender {
         address token,
         uint256 amount,
         bytes calldata data
-    ) external returns (bool) {
-        require(msg.sender == flashLoanBorrower, "Initiator is not borrower");
+    ) external override returns (bool) {
+        require(
+            token == underlyingAddress,
+            "FlashLender: Unsupported currency"
+        );
+        uint256 _fee = flashFee(token, amount);
+        require(
+            IERC20(token).transfer(address(receiver), amount),
+            "FlashLender: Transfer failed"
+        );
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, _fee, data) ==
+                CALLBACK_SUCCESS,
+            "FlashLender: Callback failed"
+        );
+        require(
+            IERC20(token).transferFrom(
+                address(receiver),
+                address(this),
+                amount + _fee
+            ),
+            "FlashLender: Repay failed"
+        );
+        return true;
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(address token)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return maxLoans[token];
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(address token, uint256 amount)
+        public
+        view
+        returns (uint256)
+    {
+        require(
+            token == underlyingAddress,
+            "FlashLender: Unsupported currency"
+        );
+        return (amount * fee) / 10000;
     }
 
     // ------------- ERC-4626 Implementations ------------- //
@@ -78,7 +104,7 @@ contract FlashLoanVault is ERC20Permit, IERC3156FlashLender {
     using FixedPointMathLib for uint256;
 
     IERC20 public immutable underlying;
-    address internal immutable _underlyingAddress;
+    address internal immutable underlyingAddress;
     uint256 internal _maxDeposit;
 
     uint256 internal constant exchangeRate = 0.5 * 1e27;
@@ -162,7 +188,7 @@ contract FlashLoanVault is ERC20Permit, IERC3156FlashLender {
     }
 
     function asset() public view returns (address _underlying) {
-        return _underlyingAddress;
+        return underlyingAddress;
     }
 
     function totalAsset() public view returns (uint256 amount) {

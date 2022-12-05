@@ -3,10 +3,13 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/FlashLoanVault.sol";
+import "../src/FlashBorrower.sol";
 import "../src/Token.sol";
 
 abstract contract StateZero is Test {
-    FlashLoanVault internal vault;
+    FlashLoanVault internal lender;
+    FlashBorrower internal borrower;
+
     Token internal underlying;
 
     address alice = address(0x1);
@@ -16,12 +19,13 @@ abstract contract StateZero is Test {
 
     function setUp() public virtual {
         underlying = new Token();
-        vault = new FlashLoanVault(
+        lender = new FlashLoanVault(
             "UND",
             "Underlying",
             18,
             address(underlying)
         );
+        borrower = new FlashBorrower(lender);
     }
 }
 
