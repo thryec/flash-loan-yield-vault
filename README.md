@@ -1,45 +1,29 @@
-# Fractional Wrapper
+# Flash Loan Yield Bearing Vault
 
-https://github.com/yieldprotocol/mentorship2022/issues/4
+https://github.com/yieldprotocol/mentorship2022/issues/9
 
 ## Objectives
 
-1. Users can send a pre-specified ERC-20 token (underlying) to another contract that is also an ERC-20, called Fractional Wrapper.
-2. The Fractional Wrapper contract issues a number of Wrapper tokens to the sender equal to the deposit multiplied by a fractional number, called exchange rate, set by the contract owner. This number is in the range of [0, 1000000000000000000], and available in increments of 10\*\*-27.
-3. At any point, a holder of Wrapper tokens can burn them to recover an amount of underlying equal to the amount of Wrapper tokens burned, divided by the exchange rate.
+Refactor the Fractional Wrapper from assignment #4 into a Proportional Ownership Flash Loan Server. It should conform to specifications ERC3156 and ERC4626.
+
+1.  Refactor the Fractional Wrapper into an ERC3156 Flash Loan Server.
+2.  Underlying: token available for flash lending.
+3.  `flashFee`: 0.1%
+4.  When users deposit underlying, the amount of wrapper tokens they receive is proportional to the ratio of their underlying deposit to the total underlying supply in the pool.
+
+    `wrapperMinted / wrapperSupply == underlyingDeposited / underlyingInWrapper`
+
+5.  Make the contract conform to ERC4626 so that it can be automatically integrated to yield aggregators such as Yearn V3.
 
 ## Functions
 
 `constructor()`
 
-- set the exchange rate
-- instantiates underlying ERC-20 token contract address
-
 `deposit()`
-
-- receives underlying ERC-20 token from user
-- calculates corresponding number of wrapper tokens using the exchange rate, and rebase to 1e27
-- mints wrapper tokens to the user
-- emits a Deposit event
 
 `withdraw()`
 
-- receives wrapper tokens from user
-- calculates corresponding number of underlying tokens, and rebase to 1e18
-- transfers underlying tokens to user
-- emits a Withdraw event
-
-`convertToShares()`
-
-- converts an underlying token (asset) to its equivalent amount in shares
-- returns uint256
-
-`convertToAssets()`
-
-- converts shares to its equivalent amount in underlying tokens (asset)
-- returns uint256
-
 ## References
 
+https://eips.ethereum.org/EIPS/eip-3156
 https://eips.ethereum.org/EIPS/eip-4626
-https://github.com/yieldprotocol/yield-utils-v2/tree/main/contracts/math
