@@ -5,8 +5,76 @@ import "forge-std/console2.sol";
 import "lib/yield-utils-v2/contracts/token/IERC20.sol";
 import "lib/yield-utils-v2/contracts/token/ERC20Permit.sol";
 import "lib/solmate/src/utils/FixedPointMathLib.sol";
+import "./IERC3156FlashBorrower.sol";
+import "./IERC3156FlashLender.sol";
 
-contract FlashLoanVault is ERC20Permit {
+contract FlashLoanVault is ERC20Permit, IERC3156FlashLender {
+    // ------------- ERC-3156 Implementations ------------- //
+    address internal flashLoanBorrower;
+
+    using FixedPointMathLib for uint256;
+
+    mapping(address => uint256) maxLoans;
+    uint256 constant fee = 1 / 1000;
+
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_,
+        address underlyingAddress,
+        IERC3156FlashBorrower borrower
+    ) ERC20Permit(name_, symbol_, decimals_) {
+        _underlyingAddress = underlyingAddress;
+        underlying = IERC20(underlyingAddress);
+        flashLoanBorrower = address(borrower);
+    }
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(address token)
+        public
+        view
+        override
+        returns (uint256)
+    {
+        maxLoans[token];
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(address token, uint256 amount)
+        external
+        view
+        returns (uint256)
+    {
+        return fee;
+    }
+
+    /**
+     * @dev Initiate a flash loan.
+     * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (bool) {
+        require(msg.sender == flashLoanBorrower, "Initiator is not borrower");
+    }
+
+    // ------------- ERC-4626 Implementations ------------- //
+
     using FixedPointMathLib for uint256;
 
     IERC20 public immutable underlying;
@@ -31,16 +99,6 @@ contract FlashLoanVault is ERC20Permit {
 
     error InsufficientBalance();
     error TransferFailed();
-
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint8 decimals_,
-        address erc20Address
-    ) ERC20Permit(name_, symbol_, decimals_) {
-        _underlyingAddress = erc20Address;
-        underlying = IERC20(erc20Address);
-    }
 
     function deposit(uint256 assets) public returns (uint256 shares) {
         uint256 _shares = convertToShares(assets);
