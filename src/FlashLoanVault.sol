@@ -6,7 +6,7 @@ import "lib/yield-utils-v2/contracts/token/IERC20.sol";
 import "lib/yield-utils-v2/contracts/token/ERC20Permit.sol";
 import "lib/solmate/src/utils/FixedPointMathLib.sol";
 
-contract FractionalWrapper is ERC20Permit {
+contract FlashLoanVault is ERC20Permit {
     using FixedPointMathLib for uint256;
 
     IERC20 public immutable underlying;

@@ -8,12 +8,12 @@ Refactor the Fractional Wrapper from assignment #4 into a Proportional Ownership
 
 1.  Refactor the Fractional Wrapper into an ERC3156 Flash Loan Server.
 2.  Underlying: token available for flash lending.
-3.  `flashFee`: 0.1%
+3.  `flashFee` = 0.1%
 4.  When users deposit underlying, the amount of wrapper tokens they receive is proportional to the ratio of their underlying deposit to the total underlying supply in the pool.
 
     `wrapperMinted / wrapperSupply == underlyingDeposited / underlyingInWrapper`
 
-5.  Make the contract conform to ERC4626 so that it can be automatically integrated to yield aggregators such as Yearn V3.
+5.  Refactor to the ERC4626 specification so that it can be automatically integrated to yield aggregators such as Yearn V3.
 
 ## Functions
 
